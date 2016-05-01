@@ -8,6 +8,9 @@ import java.util.Random;
  */
 public class Learner {
     private InputData inputData;
+    private double gravityCoef0 = 50;
+    private double alpha = 5;
+    private int epochMax = 100;
     private GVector lower = new GVector(Cell.DIM);
     private GVector upper = new GVector(Cell.DIM);
     public Agent [] agents;
@@ -44,6 +47,26 @@ public class Learner {
         return null;
     }
 
+    public double gravityCoef(int epoch) {
+        return gravityCoef0 * Math.exp(-alpha*epoch/epochMax);
+    }
+
+    public double [] fitnessBounds() {
+        double minFitness = agents[0].fitness();
+        double maxFitness = minFitness;
+        for (int i = 1; i < agents.length; i++) {
+            Agent agent = agents[i];
+            double value = agent.fitness();
+            if (value < minFitness) {
+                minFitness = value;
+            }
+            if (value > maxFitness) {
+                maxFitness = value;
+            }
+        }
+        return new double[]{minFitness, maxFitness};
+    }
+
     public class Agent {
         private Cluster[] clusters;
 
@@ -74,6 +97,5 @@ public class Learner {
             }
             return sum;
         }
-        
     }
 }
