@@ -1,5 +1,6 @@
 package com.eva.GSACancer;
 
+import javax.vecmath.GMatrix;
 import javax.vecmath.GVector;
 import java.util.Random;
 
@@ -7,20 +8,24 @@ import java.util.Random;
  * Created by eva on 5/1/16.
  */
 public class Learner {
+    public static final double epsilon;
     private InputData inputData;
     private double gravityCoef0 = 50;
     private double alpha = 5;
     private int epochMax = 100;
     private double[] masses;
+    private Agent [] forces;
     private GVector lower = new GVector(Cell.DIM);
     private GVector upper = new GVector(Cell.DIM);
     public Agent [] agents;
     private final int agentsNum = 10;
     private final int clustersNum = 10;
+    private int epoch;
+    private static Random randomGenerator = new Random();
 
-    public Learner(InputData inputData) {
-        this.inputData = inputData;
-        masses = new double[agentsNum];
+   public Learner(InputData inputData) {
+       this.inputData = inputData;
+       masses = new double[agentsNum];
     }
 
     public void learn() {
@@ -28,12 +33,14 @@ public class Learner {
         //Agent [] agents = new Agent[]
         generateAgents();
         calcMasses();
+        calcForces();
         //System.out.println("upper " + upper);
         //System.out.println("lower " + lower);
     }
 
     private void generateAgents() {
         agents = new Agent[agentsNum];
+        forces = new Agent[agents.length];
         for (int i = 0; i<agentsNum; i++) {
             Cluster[] clusters = new Cluster[clustersNum];
             for (int k = 0; k<clustersNum; k++){
@@ -45,7 +52,6 @@ public class Learner {
 
     private Cluster generateCluster() {
         Cluster cluster = new Cluster();
-        Random randomGenerator = new Random();
         for(int i = 0; i<Cell.DIM; i++) {
             cluster.center.setElement(i, lower.getElement(i) + randomGenerator.nextDouble()*(upper.getElement(i) - lower.getElement(i)));
         }
@@ -53,8 +59,8 @@ public class Learner {
         return null;
     }
 
-    public double gravityCoef(int epoch) {
-        return gravityCoef0 * Math.exp(-alpha*epoch/epochMax);
+    public double gravityCoef() {
+        return gravityCoef0 * Math.exp(-alpha* this.epoch / epochMax);
     }
 
     public void calcMasses() {
@@ -83,17 +89,77 @@ public class Learner {
         }
     }
 
-
+    public void calcForces() {
+        for (int i = 0; i < agents.length; i++) {
+            forces[i] = new Agent();
+            for (int j = 0; j < agents.length; j++){
+                if (i == j) continue;
+                double coef = gravityCoef() * masses[i] * masses[j] / (agents[i].distance(agents[j]) + epsilon);
+                Agent agent = Agent.subtract(agents[j], agents[i]);
+                agent.scale(coef);
+                agent.scale(randomGenerator.nextDouble());
+                //crossForces[i][j] = agent;
+                forces[i].add(agent);
+            }
+        }
+    }
 
     public class Agent {
         private Cluster[] clusters;
-
 
         public Agent(Cluster[] clusters) {
             this.clusters = clusters;
         }
 
+        public Agent() {
+            clusters = new Cluster[clustersNum];
+            for (int i = 0; i < c.length; i++) {
+                c[i] = new Cluster();
+                c[i].center = new GVector(Cell.DIM);
+                c[i].center.zero();
+            }
+        }
 
+        public void add(Agent other) {
+            for (int i = 0; i < clusters.length; i++) {
+                clusters[i].center.add(other.clusters[i].center);
+            }
+        }
+
+        public void subtract(Agent other) {
+            for (int i = 0; i < clusters.length; i++) {
+                clusters[i].center.sub(other.clusters[i].center);
+            }
+        }
+
+        public static Agent subtract(Agent a, Agent b) {
+            Agent z = a.clone();
+            z.subtract(b);
+            return z;
+        }
+
+        public void scale(double coef) {
+            for (Cluster cluster : clusters) {
+                cluster.center.scale(coef);
+            }
+        }
+
+        public double sumOfSquares() {
+            double sum = 0;
+            for (Cluster cluster : clusters) {
+                for (int i = 0; i < cluster.center.getSize(); i++) {
+                    double value = cluster.center.getElement(i);
+                    sum += value * value;
+                }
+            }
+            return sum;
+        }
+
+        public double distance(Agent other) {
+            Agent delta = clone();
+            delta.subtract(other);
+            return delta.sumOfSquares();
+        }
 
         public double fitness(){
             double [] sumsOfDistances = new double[clusters.length];
@@ -114,6 +180,11 @@ public class Learner {
                 sum += sumOfDistances;
             }
             return sum;
+        }
+
+        @Override
+        protected Agent clone() {
+            return new Agent(clusters.clone());
         }
     }
 }
