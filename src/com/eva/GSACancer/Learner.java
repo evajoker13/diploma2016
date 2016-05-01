@@ -11,22 +11,28 @@ public class Learner {
     private double gravityCoef0 = 50;
     private double alpha = 5;
     private int epochMax = 100;
+    private double[] masses;
     private GVector lower = new GVector(Cell.DIM);
     private GVector upper = new GVector(Cell.DIM);
     public Agent [] agents;
+    private final int agentsNum = 10;
+    private final int clustersNum = 10;
+
     public Learner(InputData inputData) {
         this.inputData = inputData;
+        masses = new double[agentsNum];
     }
 
     public void learn() {
         inputData.findBoundaries(lower, upper);
         //Agent [] agents = new Agent[]
-        generateAgents(10, 10);
+        generateAgents();
+        calcMasses();
         //System.out.println("upper " + upper);
         //System.out.println("lower " + lower);
     }
 
-    private void generateAgents(int agentsNum, int clustersNum) {
+    private void generateAgents() {
         agents = new Agent[agentsNum];
         for (int i = 0; i<agentsNum; i++) {
             Cluster[] clusters = new Cluster[clustersNum];
@@ -51,21 +57,33 @@ public class Learner {
         return gravityCoef0 * Math.exp(-alpha*epoch/epochMax);
     }
 
-    public double [] fitnessBounds() {
-        double minFitness = agents[0].fitness();
-        double maxFitness = minFitness;
+    public void calcMasses() {
+        double[] fitnesses = new double[agents.length];
+        fitnesses[0] = agents[0].fitness();
+        double best = fitnesses[0];
+        double worst = best;
         for (int i = 1; i < agents.length; i++) {
             Agent agent = agents[i];
             double value = agent.fitness();
-            if (value < minFitness) {
-                minFitness = value;
+            fitnesses[i] = value;
+            if (value < best) {
+                best = value;
             }
-            if (value > maxFitness) {
-                maxFitness = value;
+            if (value > worst) {
+                worst = value;
             }
         }
-        return new double[]{minFitness, maxFitness};
+        double sumOfMasses = 0;
+        for (int i = 0; i < fitnesses.length; i++) {
+            masses[i] = (fitnesses[i] - worst) / (best - worst);
+            sumOfMasses += masses[i];
+        }
+        for (int i = 0; i < masses.length; i++) {
+            masses[i] /= sumOfMasses;
+        }
     }
+
+
 
     public class Agent {
         private Cluster[] clusters;
