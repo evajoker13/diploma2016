@@ -1,6 +1,5 @@
 package com.eva.GSACancer;
 
-import javax.vecmath.GMatrix;
 import javax.vecmath.GVector;
 import java.util.Random;
 
@@ -8,13 +7,14 @@ import java.util.Random;
  * Created by eva on 5/1/16.
  */
 public class Learner {
-    public static final double epsilon;
+    public static final double epsilon = 0;
     private InputData inputData;
     private double gravityCoef0 = 50;
     private double alpha = 5;
     private int epochMax = 100;
     private double[] masses;
-    private Agent [] forces;
+    private Agent [] accelerations;
+    private Agent[] velocities;
     private GVector lower = new GVector(Cell.DIM);
     private GVector upper = new GVector(Cell.DIM);
     public Agent [] agents;
@@ -33,14 +33,16 @@ public class Learner {
         //Agent [] agents = new Agent[]
         generateAgents();
         calcMasses();
-        calcForces();
+        calcAccelerations();
+        updateAgents();
         //System.out.println("upper " + upper);
         //System.out.println("lower " + lower);
     }
 
     private void generateAgents() {
         agents = new Agent[agentsNum];
-        forces = new Agent[agents.length];
+        accelerations = new Agent[agents.length];
+        velocities = new Agent[agents.length];
         for (int i = 0; i<agentsNum; i++) {
             Cluster[] clusters = new Cluster[clustersNum];
             for (int k = 0; k<clustersNum; k++){
@@ -89,19 +91,34 @@ public class Learner {
         }
     }
 
-    public void calcForces() {
+    public void calcAccelerations() {
         for (int i = 0; i < agents.length; i++) {
-            forces[i] = new Agent();
+            accelerations[i] = new Agent();
             for (int j = 0; j < agents.length; j++){
                 if (i == j) continue;
                 double coef = gravityCoef() * masses[i] * masses[j] / (agents[i].distance(agents[j]) + epsilon);
-                Agent agent = Agent.subtract(agents[j], agents[i]);
+                Agent agent = subtract(agents[j], agents[i]);
                 agent.scale(coef);
                 agent.scale(randomGenerator.nextDouble());
                 //crossForces[i][j] = agent;
-                forces[i].add(agent);
+                accelerations[i].add(agent);
             }
+            accelerations[i].scale(1.0/masses[i]);
         }
+    }
+
+    public void updateAgents() {
+        for (int i = 0; i < velocities.length; i++) {
+            velocities[i].scale(randomGenerator.nextDouble());
+            velocities[i].add(accelerations[i]);
+            agents[i].add(velocities[i]);
+        }
+    }
+
+    public Agent subtract(Agent a, Agent b) {
+        Agent z = a.clone();
+        z.subtract(b);
+        return z;
     }
 
     public class Agent {
@@ -113,10 +130,10 @@ public class Learner {
 
         public Agent() {
             clusters = new Cluster[clustersNum];
-            for (int i = 0; i < c.length; i++) {
-                c[i] = new Cluster();
-                c[i].center = new GVector(Cell.DIM);
-                c[i].center.zero();
+            for (int i = 0; i < clusters.length; i++) {
+                clusters[i] = new Cluster();
+                clusters[i].center = new GVector(Cell.DIM);
+                clusters[i].center.zero();
             }
         }
 
@@ -130,12 +147,6 @@ public class Learner {
             for (int i = 0; i < clusters.length; i++) {
                 clusters[i].center.sub(other.clusters[i].center);
             }
-        }
-
-        public static Agent subtract(Agent a, Agent b) {
-            Agent z = a.clone();
-            z.subtract(b);
-            return z;
         }
 
         public void scale(double coef) {
