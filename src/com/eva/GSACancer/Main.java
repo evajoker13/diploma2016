@@ -28,7 +28,7 @@ public class Main {
             return;
         }
 
-        inputData.getCells().forEach(System.out::println);
+        //inputData.getCells().forEach(System.out::println);
 
         Learner learner = new Learner(inputData);
         learner.learn();

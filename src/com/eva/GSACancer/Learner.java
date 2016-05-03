@@ -34,7 +34,7 @@ public class Learner {
         //Agent [] agents = new Agent[]
         generateAgents();
         for (epoch = 0; epoch < epochMax; ++epoch) {
-            stripOrder();
+            fixup();
             calcMasses();
             calcAccelerations();
             updateAgents();
@@ -53,6 +53,8 @@ public class Learner {
                 clusters[k] = generateCluster();
             }
             agents[i] = new Agent(clusters);
+            accelerations[i] = new Agent();
+            velocities[i] = new Agent();
         }
     }
 
@@ -113,14 +115,22 @@ public class Learner {
 
     public void updateAgents() {
         for (int i = 0; i < velocities.length; i++) {
-            velocities[i].scale(randomGenerator.nextDouble());
+            double rand = randomGenerator.nextDouble();
+            velocities[i].scale(rand);
             velocities[i].add(accelerations[i]);
             agents[i].add(velocities[i]);
         }
     }
 
-    public void stripOrder() {
-        for (int i = 0; i < agents.length; i++) Arrays.sort(agents[i].clusters);
+    public void fixup() {
+        for (int i = 0; i < agents.length; i++) {
+            if (!agents[i].inBorders()) {
+                for (int j = 0; j < agents[i].clusters.length; j++) {
+                    agents[i].clusters[j] = generateCluster();
+                }
+            }
+            Arrays.sort(agents[i].clusters);
+        }
     }
 
     public Agent subtract(Agent a, Agent b) {
@@ -204,6 +214,15 @@ public class Learner {
         @Override
         protected Agent clone() {
             return new Agent(clusters.clone());
+        }
+
+        public boolean inBorders() {
+            for (Cluster cluster : clusters) {
+                if (!cluster.within(lower, upper)) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }
