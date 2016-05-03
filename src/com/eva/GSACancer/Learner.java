@@ -43,6 +43,10 @@ public class Learner {
         //System.out.println("lower " + lower);
     }
 
+    public Agent createAgent() {
+        return new Agent();
+    }
+
     private void generateAgents() {
         agents = new Agent[agentsNum];
         accelerations = new Agent[agents.length];
@@ -140,7 +144,7 @@ public class Learner {
     }
 
     public class Agent {
-        private Cluster[] clusters;
+        public Cluster[] clusters;
 
         public Agent(Cluster[] clusters) {
             this.clusters = clusters;

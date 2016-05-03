@@ -14,6 +14,26 @@ public class Cell {
         this.classification = classification;
         this.point = point;
     }
+
+    public Cell(Classification classification, double x, double y)
+    {
+        this.classification = classification;
+        this.point = new GVector(Cell.DIM);
+        point.zero();
+        this.point.setElement(0, x);
+        this.point.setElement(1, y);
+    }
+
+    public static Cell fam(double x, double y)
+    {
+        return new Cell(Classification.FAM, x, y);
+    }
+
+    public static Cell rmz(double x, double y)
+    {
+        return new Cell(Classification.RMZ, x, y);
+    }
+
     public enum Classification {
         Unknown,
         RMZ,
