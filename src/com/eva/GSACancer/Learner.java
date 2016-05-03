@@ -1,6 +1,7 @@
 package com.eva.GSACancer;
 
 import javax.vecmath.GVector;
+import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -32,9 +33,12 @@ public class Learner {
         inputData.findBoundaries(lower, upper);
         //Agent [] agents = new Agent[]
         generateAgents();
-        calcMasses();
-        calcAccelerations();
-        updateAgents();
+        for (epoch = 0; epoch < epochMax; ++epoch) {
+            stripOrder();
+            calcMasses();
+            calcAccelerations();
+            updateAgents();
+        }
         //System.out.println("upper " + upper);
         //System.out.println("lower " + lower);
     }
@@ -58,7 +62,7 @@ public class Learner {
             cluster.center.setElement(i, lower.getElement(i) + randomGenerator.nextDouble()*(upper.getElement(i) - lower.getElement(i)));
         }
 
-        return null;
+        return cluster;
     }
 
     public double gravityCoef() {
@@ -113,6 +117,10 @@ public class Learner {
             velocities[i].add(accelerations[i]);
             agents[i].add(velocities[i]);
         }
+    }
+
+    public void stripOrder() {
+        for (int i = 0; i < agents.length; i++) Arrays.sort(agents[i].clusters);
     }
 
     public Agent subtract(Agent a, Agent b) {
