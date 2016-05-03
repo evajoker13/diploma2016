@@ -9,7 +9,7 @@ public class Cell {
 
     public final static int DIM = 15;
     private GVector point;
-    private Classification classification;
+    public Classification classification;
     public Cell(Classification classification, GVector point){
         this.classification = classification;
         this.point = point;
@@ -37,7 +37,8 @@ public class Cell {
     public enum Classification {
         Unknown,
         RMZ,
-        FAM
+        FAM,
+        Unclear
     }
 
     public GVector getPoint() {

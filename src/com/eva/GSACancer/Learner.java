@@ -8,7 +8,7 @@ import java.util.Random;
  * Created by eva on 5/1/16.
  */
 public class Learner {
-    public static final double epsilon = 0;
+    public static final double EPSILON = 0.0001;
     private InputData inputData;
     private double gravityCoef0 = 50;
     private double alpha = 5;
@@ -26,29 +26,34 @@ public class Learner {
 
    public Learner(InputData inputData) {
        this.inputData = inputData;
-       masses = new double[agentsNum];
+       inputData.findBoundaries(lower, upper);
     }
 
     public void learn() {
-        inputData.findBoundaries(lower, upper);
         //Agent [] agents = new Agent[]
         generateAgents();
-        for (epoch = 0; epoch < epochMax; ++epoch) {
-            fixup();
-            calcMasses();
-            calcAccelerations();
-            updateAgents();
+        for (epoch = 0; epoch < epochMax; ) {
+            nextStep();
         }
         //System.out.println("upper " + upper);
         //System.out.println("lower " + lower);
+    }
+
+    void nextStep() {
+        fixup();
+        calcMasses();
+        calcAccelerations();
+        updateAgents();
+        ++epoch;
     }
 
     public Agent createAgent() {
         return new Agent();
     }
 
-    private void generateAgents() {
+    void generateAgents() {
         agents = new Agent[agentsNum];
+        masses = new double[agents.length];
         accelerations = new Agent[agents.length];
         velocities = new Agent[agents.length];
         for (int i = 0; i<agentsNum; i++) {
@@ -62,7 +67,7 @@ public class Learner {
         }
     }
 
-    private Cluster generateCluster() {
+    Cluster generateCluster() {
         Cluster cluster = new Cluster();
         for(int i = 0; i<Cell.DIM; i++) {
             cluster.center.setElement(i, lower.getElement(i) + randomGenerator.nextDouble()*(upper.getElement(i) - lower.getElement(i)));
@@ -93,7 +98,7 @@ public class Learner {
         }
         double sumOfMasses = 0;
         for (int i = 0; i < fitnesses.length; i++) {
-            masses[i] = (fitnesses[i] - worst) / (best - worst);
+            masses[i] = (fitnesses[i] - worst + EPSILON) / (best - worst + EPSILON);
             sumOfMasses += masses[i];
         }
         for (int i = 0; i < masses.length; i++) {
@@ -106,7 +111,7 @@ public class Learner {
             accelerations[i] = new Agent();
             for (int j = 0; j < agents.length; j++){
                 if (i == j) continue;
-                double coef = gravityCoef() * masses[i] * masses[j] / (agents[i].distance(agents[j]) + epsilon);
+                double coef = gravityCoef() * masses[i] * masses[j] / (agents[i].distance(agents[j]) + EPSILON);
                 Agent agent = subtract(agents[j], agents[i]);
                 agent.scale(coef);
                 agent.scale(randomGenerator.nextDouble());
@@ -136,6 +141,21 @@ public class Learner {
             Arrays.sort(agents[i].clusters);
         }
     }
+
+    public Agent bestAgent() {
+        Agent best = agents[0];
+        double bestFittness = best.fitness();
+        for (int i = 1; i < agents.length; i++) {
+            double fitness = agents[i].fitness();
+            if (fitness < bestFittness) {
+                best = agents[i];
+                bestFittness = fitness;
+            }
+        }
+        return best;
+    }
+
+
 
     public Agent subtract(Agent a, Agent b) {
         Agent z = a.clone();
@@ -196,6 +216,9 @@ public class Learner {
 
         public double fitness(){
             double [] sumsOfDistances = new double[clusters.length];
+            for (Cluster cluster : clusters) {
+                cluster.classification = Cell.Classification.Unknown;
+            }
             for (Cell cell: inputData.getCells()) {
                 int minIndex = 0;
                 double minDist = clusters[0].distance(cell.getPoint());
@@ -207,6 +230,7 @@ public class Learner {
                     }
                 }
                 sumsOfDistances[minIndex] += minDist;
+                clusters[minIndex].update(cell.classification);
             }
             double sum = 0;
             for (double sumOfDistances : sumsOfDistances) {
@@ -227,6 +251,22 @@ public class Learner {
                 }
             }
             return true;
+        }
+
+        public Cell.Classification classify(Cell cell) {
+            Cluster best = null;
+            double bestDistance = Double.MAX_VALUE;
+            for (Cluster cluster : clusters) {
+                double distance = cluster.distance(cell.getPoint());
+                if (distance < bestDistance) {
+                    best = cluster;
+                    bestDistance = distance;
+                }
+            }
+            //assert best != null;
+            if (best == null) return Cell.Classification.Unknown;
+
+            return best.classification;
         }
     }
 }

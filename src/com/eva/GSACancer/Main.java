@@ -27,10 +27,30 @@ public class Main {
             e.printStackTrace();
             return;
         }
-
         //inputData.getCells().forEach(System.out::println);
 
         Learner learner = new Learner(inputData);
         learner.learn();
+
+        System.out.println("Testing..");
+        InputData newInputData = new InputData();
+
+        try {
+            Scanner sc = new Scanner(new BufferedReader(new FileReader("/home/eva/workspaceEclipse/GSACancer/data/c.pok")));
+            newInputData.loadFromScanner(sc, Cell.Classification.Unknown);
+            sc.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        Learner.Agent agent = learner.bestAgent();
+
+        //System.out.println(newInputData.getCells());
+        for (Cell cell : newInputData.getCells()) {
+            System.out.println(cell);
+            System.out.println(agent.classify(cell));
+        }
+
     }
 }

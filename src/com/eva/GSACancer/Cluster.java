@@ -2,13 +2,12 @@ package com.eva.GSACancer;
 
 import javax.vecmath.GVector;
 
-import static java.lang.Math.sqrt;
-
 /**
  * Created by eva on 4/30/16.
  */
 public class Cluster implements Comparable<Cluster> {
     public GVector center;
+    public Cell.Classification classification;
     public Cluster() {
         center = new GVector(Cell.DIM);
     }
@@ -16,7 +15,7 @@ public class Cluster implements Comparable<Cluster> {
     public double distance(GVector point) {
         GVector delta = new GVector(center);
         delta.sub(point);
-        return sqrt(delta.dot(delta));
+        return delta.norm();
     }
 
 
@@ -38,5 +37,13 @@ public class Cluster implements Comparable<Cluster> {
             }
         }
         return true;
+    }
+
+    public void update(Cell.Classification classification) {
+        if (this.classification == Cell.Classification.Unknown) {
+            this.classification = classification;
+        } else if (this.classification != classification) {
+            this.classification = Cell.Classification.Unclear;
+        }
     }
 }
