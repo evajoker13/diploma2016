@@ -144,12 +144,12 @@ public class Learner {
 
     public Agent bestAgent() {
         Agent best = agents[0];
-        double bestFittness = best.fitness();
+        double bestFitness = best.fitness();
         for (int i = 1; i < agents.length; i++) {
             double fitness = agents[i].fitness();
-            if (fitness < bestFittness) {
+            if (fitness < bestFitness) {
                 best = agents[i];
-                bestFittness = fitness;
+                bestFitness = fitness;
             }
         }
         return best;
@@ -217,7 +217,7 @@ public class Learner {
         public double fitness(){
             double [] sumsOfDistances = new double[clusters.length];
             for (Cluster cluster : clusters) {
-                cluster.classification = Cell.Classification.Unknown;
+                cluster.reset();
             }
             for (Cell cell: inputData.getCells()) {
                 int minIndex = 0;
@@ -236,7 +236,11 @@ public class Learner {
             for (double sumOfDistances : sumsOfDistances) {
                 sum += sumOfDistances;
             }
-            return sum;
+            double prod = 1;
+            for (Cluster cluster : clusters) {
+                prod *= 1 - cluster.mixtureLevel() + EPSILON;
+            }
+            return sum * prod;
         }
 
         @Override
