@@ -11,8 +11,8 @@ public class Learner {
     public static final double EPSILON = 0.0001;
     private InputData inputData;
     private double gravityCoef0 = 50;
-    private double alpha = 5;
-    private int epochMax = 100;
+    private double alpha = 0.0;
+    private int epochMax = 1000;
     private double[] masses;
     private Agent [] accelerations;
     private Agent[] velocities;
@@ -20,7 +20,7 @@ public class Learner {
     private GVector upper = new GVector(Cell.DIM);
     public Agent [] agents;
     private final int agentsNum = 10;
-    private final int clustersNum = 10;
+    private final int clustersNum = 20;
     private int epoch;
     private static Random randomGenerator = new Random();
 
@@ -238,7 +238,7 @@ public class Learner {
             }
             double prod = 1;
             for (Cluster cluster : clusters) {
-                prod *= 1 - cluster.mixtureLevel() + EPSILON;
+                prod *= 1 - cluster.estimationConfidence() + EPSILON;
             }
             return sum * prod;
         }
@@ -257,7 +257,7 @@ public class Learner {
             return true;
         }
 
-        public Cell.Classification classify(Cell cell) {
+        public Cluster classify(Cell cell) {
             Cluster best = null;
             double bestDistance = Double.MAX_VALUE;
             for (Cluster cluster : clusters) {
@@ -268,9 +268,9 @@ public class Learner {
                 }
             }
             //assert best != null;
-            if (best == null) return Cell.Classification.Unknown;
+            //if (best == null) return Cell.Classification.Unknown;
 
-            return best.classification;
+            return best;
         }
     }
 }

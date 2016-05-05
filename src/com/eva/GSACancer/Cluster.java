@@ -71,4 +71,13 @@ public class Cluster implements Comparable<Cluster> {
         if (rmzCalc + famCalc == 0) return 0;
         return abs(rmzCalc - famCalc) / (rmzCalc + famCalc);
     }
+
+    public Cell.Classification estimateClassification() {
+        return rmzCalc < famCalc ? Cell.Classification.FAM : Cell.Classification.RMZ;
+    }
+
+    public double estimationConfidence(){
+        if (rmzCalc + famCalc == 0) return 0;
+        return Math.max(rmzCalc, famCalc) * 1.0 / (rmzCalc + famCalc);
+    }
 }

@@ -49,7 +49,9 @@ public class Main {
         //System.out.println(newInputData.getCells());
         for (Cell cell : newInputData.getCells()) {
             System.out.println(cell);
-            System.out.println(agent.classify(cell));
+            Cluster cluster = agent.classify(cell);
+            System.out.println(cluster.estimateClassification());
+            System.out.println(cluster.estimationConfidence());
         }
 
     }
