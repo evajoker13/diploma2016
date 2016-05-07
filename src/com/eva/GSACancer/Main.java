@@ -60,7 +60,7 @@ public class Main {
             System.out.println(cluster.estimationConfidence());
             System.out.println(cluster);
         }
-        System.out.println(famQ * 0.1 + " <--- fam");
-        System.out.println(rmzQ * 0.1 + " <--- rmz");
+        System.out.println(famQ * 10 + "% <--- fam");
+        System.out.println(rmzQ * 10 + "% <--- rmz");
     }
 }

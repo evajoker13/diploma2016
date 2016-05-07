@@ -247,7 +247,9 @@ public class Learner {
             return delta.sumOfSquares();
         }
 
-        public double fitness(){
+        public double fitness() { return fitness1(); }
+
+        public double fitness2(){
             double sumsOfDistances = 0.0;
             for (Cluster cluster : clusters) {
                 cluster.reset();
@@ -273,6 +275,33 @@ public class Learner {
                 prod *= 1 - cluster.estimationConfidence() + EPSILON;
             }
             return sumsOfDistances * prod;
+        }
+
+        public double fitness1(){
+            double [] sumsOfDistances = new double[clusters.length];
+            for (Cluster cluster : clusters) {
+                cluster.classification = Cell.Classification.Unknown;
+            }
+            for (Cell cell: inputData.getCells()) {
+                int minIndex = 0;
+                double minDist = clusters[0].distance(cell.getPoint());
+                for(int i = 1; i<clusters.length; i++) {
+                    double dist = clusters[i].distance(cell.getPoint());
+                    if (dist < minDist) {
+                        minIndex = i;
+                        minDist = dist;
+                    }
+                }
+                sumsOfDistances[minIndex] += minDist;
+                clusters[minIndex].update(cell.classification);
+            }
+            double sum = 0;
+            for (int i = 0; i < sumsOfDistances.length; i++) {
+                sum += sumsOfDistances[i] * (1 - clusters[i].estimationConfidence() + EPSILON);
+            }
+
+            return sum;
+
         }
 
 
