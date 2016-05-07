@@ -43,14 +43,21 @@ public class Cluster implements Comparable<Cluster> {
         return true;
     }
 
+    @Override
+    public String toString() {
+        return "Cluster{" +
+                "center=" + center +
+                ", classification=" + classification +
+                ", rmzCalc=" + rmzCalc +
+                ", famCalc=" + famCalc +
+                '}';
+    }
+
     public void update(Cell.Classification classification) {
         if (this.classification == Cell.Classification.Unknown) {
-            rmzCalc++;
             this.classification = classification;
         } else if (this.classification != classification) {
             this.classification = Cell.Classification.Unclear;
-        } else {
-            ++rmzCalc;
         }
         switch (classification) {
             case RMZ:

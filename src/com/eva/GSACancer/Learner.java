@@ -4,6 +4,8 @@ import javax.vecmath.GVector;
 import java.util.Arrays;
 import java.util.Random;
 
+import static java.lang.StrictMath.abs;
+
 /**
  * Created by eva on 5/1/16.
  */
@@ -13,25 +15,32 @@ public class Learner {
     private double gravityCoef0 = 50;
     private double alpha = 0.0;
     private int epochMax = 100;
-    private double[] masses;
-    private Agent [] accelerations;
-    private Agent[] velocities;
+    double[] masses;
+    Agent [] accelerations;
+    Agent[] velocities;
     private GVector lower = new GVector(Cell.DIM);
     private GVector upper = new GVector(Cell.DIM);
     public Agent [] agents;
-    private final int agentsNum = 10;
-    private final int clustersNum = 10;
+    public final int defaultAgentsNum = 10;
+    private int clustersNum;
     private int epoch;
     private static Random randomGenerator = new Random();
 
-   public Learner(InputData inputData) {
+    public Learner(InputData inputData) {
        this.inputData = inputData;
        inputData.findBoundaries(lower, upper);
+        clustersNum = inputData.getCells().size() / 5;
+    }
+
+    public Learner(InputData inputData, int clustersNum) {
+        this.inputData = inputData;
+        inputData.findBoundaries(lower, upper);
+        this.clustersNum = clustersNum;
     }
 
     public void learn() {
         //Agent [] agents = new Agent[]
-        generateAgents();
+        generateAgents(defaultAgentsNum);
         for (epoch = 0; epoch < epochMax; ) {
             nextStep();
         }
@@ -47,14 +56,19 @@ public class Learner {
         ++epoch;
     }
 
-    void generateAgents() {
+    public Agent createAgent() {
+        return new Agent();
+    }
+
+    void generateAgents(int agentsNum) {
         agents = new Agent[agentsNum];
         masses = new double[agents.length];
         accelerations = new Agent[agents.length];
         velocities = new Agent[agents.length];
-        for (int i = 0; i<agentsNum; i++) {
+        for (int i = 0; i< agents.length; i++) {
             agents[i] = generateAgent();
             accelerations[i] = new Agent();
+//            velocities[i] = new Agent();
             velocities[i] = generateAgent();
             velocities[i].subtract(agents[i]);
         }
@@ -97,9 +111,17 @@ public class Learner {
                 worst = value;
             }
         }
+
+        if (best == worst) { // all agents are equal in terms of fitness
+            for (int i = 0; i < masses.length; i++) {
+                masses[i] = 1 / defaultAgentsNum;
+            }
+            return;
+        }
         double sumOfMasses = 0;
         for (int i = 0; i < fitnesses.length; i++) {
-            masses[i] = (fitnesses[i] - worst + EPSILON) / (best - worst + EPSILON);
+            masses[i] = abs((fitnesses[i] - worst) / (best - worst));
+            /*masses[i] = (fitnesses[i] - worst + EPSILON) / (best - worst + EPSILON);*/
             sumOfMasses += masses[i];
         }
         for (int i = 0; i < masses.length; i++) {
@@ -109,10 +131,13 @@ public class Learner {
 
     public void calcAccelerations() {
         for (int i = 0; i < agents.length; i++) {
+            assert Double.isFinite(masses[i]);
             accelerations[i] = new Agent();
-            for (int j = 0; j < agents.length; j++){
+            if (masses[i] < 1e-6) continue; // leave acceleration as zero
+            for (int j = 0; j < agents.length; j++) {
                 if (i == j) continue;
                 double coef = gravityCoef() * masses[i] * masses[j] / (agents[i].distance(agents[j]) + EPSILON);
+                assert Double.isFinite(coef);
                 Agent agent = subtract(agents[j], agents[i]);
                 agent.scale(coef);
                 agent.scale(randomGenerator.nextDouble());
@@ -137,9 +162,11 @@ public class Learner {
             if (!agents[i].inBorders()) {
                 for (int j = 0; j < agents[i].clusters.length; j++) {
                     agents[i].clusters[j] = generateCluster();
+                    velocities[i] = generateAgent();
+                    velocities[i].subtract(agents[i]);
                 }
             }
-            Arrays.sort(agents[i].clusters);
+//            Arrays.sort(agents[i].clusters);
         }
     }
 
@@ -167,6 +194,13 @@ public class Learner {
 
         public Agent(Cluster[] clusters) {
             this.clusters = clusters;
+        }
+
+        @Override
+        public String toString() {
+            return "Agent{" +
+                    "clusters=" + Arrays.toString(clusters) +
+                    '}';
         }
 
         public Agent() {
@@ -214,32 +248,31 @@ public class Learner {
         }
 
         public double fitness(){
-            double [] sumsOfDistances = new double[clusters.length];
+            double sumsOfDistances = 0.0;
             for (Cluster cluster : clusters) {
                 cluster.reset();
             }
+
+            // For every cell in cells[] we look for the nearest cluster.center
             for (Cell cell: inputData.getCells()) {
-                int minIndex = 0;
-                double minDist = clusters[0].distance(cell.getPoint());
-                for(int i = 1; i<clusters.length; i++) {
-                    double dist = clusters[i].distance(cell.getPoint());
-                    if (dist < minDist) {
-                        minIndex = i;
-                        minDist = dist;
-                    }
-                }
-                sumsOfDistances[minIndex] += minDist;
-                clusters[minIndex].update(cell.classification);
-            }
-            double sum = 0;
-            for (double sumOfDistances : sumsOfDistances) {
-                sum += sumOfDistances;
+//                int minIndex = 0;
+//                double minDist = clusters[minIndex].distance(cell.getPoint());
+//                for(int i = minIndex + 1; i<clusters.length; i++) {
+//                    double dist = clusters[i].distance(cell.getPoint());
+//                    if (dist < minDist) {
+//                        minIndex = i;
+//                        minDist = dist;
+//                    }
+//                }
+                Cluster best = classify(cell);
+                sumsOfDistances += best.distance(cell.getPoint());
+                best.update(cell.classification);
             }
             double prod = 1;
             for (Cluster cluster : clusters) {
                 prod *= 1 - cluster.estimationConfidence() + EPSILON;
             }
-            return sum * prod;
+            return sumsOfDistances * prod;
         }
 
 
@@ -259,12 +292,13 @@ public class Learner {
         }
 
         public Cluster classify(Cell cell) {
-            Cluster best = null;
-            double bestDistance = Double.MAX_VALUE;
-            for (Cluster cluster : clusters) {
-                double distance = cluster.distance(cell.getPoint());
+            assert clusters.length > 0;
+            Cluster best = clusters[0];
+            double bestDistance = best.distance(cell.getPoint());
+            for (int i = 1; i < clusters.length; i++) {
+                double distance = clusters[i].distance(cell.getPoint());
                 if (distance < bestDistance) {
-                    best = cluster;
+                    best = clusters[i];
                     bestDistance = distance;
                 }
             }

@@ -17,4 +17,11 @@ public class ClusterTest {
         assertEquals(cluster.distance(vec(3,4)), 5.0, 0.001);
     }
 
+    @Test
+    public void testWithin() throws Exception {
+        Cluster cluster = new Cluster();
+        cluster.center = vec(0, 1);
+        assertTrue(cluster.within(vec(0, 0), vec(2.0, 3.0)));
+    }
+
 }

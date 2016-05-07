@@ -3,6 +3,7 @@ package com.eva.GSACancer;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -47,13 +48,19 @@ public class Main {
         Learner.Agent agent = learner.bestAgent();
 
         //System.out.println(newInputData.getCells());
-        for (Cell cell : newInputData.getCells()) {
-            System.out.println(cell);
-            Cluster cluster = agent.classify(cell);
+        int famQ = 0;
+        int rmzQ = 0;
+        List<Cell> cells = newInputData.getCells();
+        for (int i = 0; i < cells.size(); i++) {
+            System.out.println(cells.get(i));
+            Cluster cluster = agent.classify(cells.get(i));
+            if (i < 10 && cluster.estimateClassification() == Cell.Classification.FAM) ++famQ;
+            if (i >= 10 && cluster.estimateClassification() == Cell.Classification.RMZ) ++rmzQ;
             System.out.println(cluster.estimateClassification());
             System.out.println(cluster.estimationConfidence());
             System.out.println(cluster);
         }
-
+        System.out.println(famQ * 0.1 + " <--- fam");
+        System.out.println(rmzQ * 0.1 + " <--- rmz");
     }
 }
