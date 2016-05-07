@@ -12,7 +12,7 @@ public class Learner {
     private InputData inputData;
     private double gravityCoef0 = 50;
     private double alpha = 0.0;
-    private int epochMax = 1000;
+    private int epochMax = 100;
     private double[] masses;
     private Agent [] accelerations;
     private Agent[] velocities;
@@ -20,7 +20,7 @@ public class Learner {
     private GVector upper = new GVector(Cell.DIM);
     public Agent [] agents;
     private final int agentsNum = 10;
-    private final int clustersNum = 20;
+    private final int clustersNum = 10;
     private int epoch;
     private static Random randomGenerator = new Random();
 
@@ -47,24 +47,25 @@ public class Learner {
         ++epoch;
     }
 
-    public Agent createAgent() {
-        return new Agent();
-    }
-
     void generateAgents() {
         agents = new Agent[agentsNum];
         masses = new double[agents.length];
         accelerations = new Agent[agents.length];
         velocities = new Agent[agents.length];
         for (int i = 0; i<agentsNum; i++) {
-            Cluster[] clusters = new Cluster[clustersNum];
-            for (int k = 0; k<clustersNum; k++){
-                clusters[k] = generateCluster();
-            }
-            agents[i] = new Agent(clusters);
+            agents[i] = generateAgent();
             accelerations[i] = new Agent();
-            velocities[i] = new Agent();
+            velocities[i] = generateAgent();
+            velocities[i].subtract(agents[i]);
         }
+    }
+
+    Agent generateAgent() {
+        Cluster[] clusters = new Cluster[clustersNum];
+        for (int k = 0; k<clustersNum; k++){
+            clusters[k] = generateCluster();
+        }
+        return new Agent(clusters);
     }
 
     Cluster generateCluster() {
@@ -155,8 +156,6 @@ public class Learner {
         return best;
     }
 
-
-
     public Agent subtract(Agent a, Agent b) {
         Agent z = a.clone();
         z.subtract(b);
@@ -242,6 +241,8 @@ public class Learner {
             }
             return sum * prod;
         }
+
+
 
         @Override
         protected Agent clone() {

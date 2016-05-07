@@ -52,6 +52,7 @@ public class Main {
             Cluster cluster = agent.classify(cell);
             System.out.println(cluster.estimateClassification());
             System.out.println(cluster.estimationConfidence());
+            System.out.println(cluster);
         }
 
     }
