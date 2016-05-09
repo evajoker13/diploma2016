@@ -2,6 +2,8 @@ package com.eva.DGCCancer;
 
 import com.eva.GSACancer.Cell;
 import com.eva.GSACancer.InputData;
+import org.apache.commons.math3.distribution.EnumeratedDistribution;
+import org.apache.commons.math3.util.Pair;
 import org.jscience.mathematics.number.Rational;
 
 import javax.vecmath.GVector;
@@ -9,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by eva on 5/8/16.
@@ -16,7 +19,7 @@ import java.util.stream.Collectors;
 public class Learner {
     private List<Cell> inputFAM = new ArrayList<>();
     private List<Cell> inputRMZ = new ArrayList<>();
-    public double epsilon;
+    public double epsilon = 0.001;
     public double delta = 0.1;
     public GVector lower = new GVector(Cell.DIM), range = new GVector(Cell.DIM);
     public List<DataParticle> dataParticlesFAM = new ArrayList<>();
@@ -27,7 +30,7 @@ public class Learner {
     public GVector selectionProbabilities = new GVector(Cell.DIM);
     public Rational ratio;
     public Random random = new Random();
-    public final int LCM = 360360;
+    public final int LCM = 24024;
 
     public Learner(InputData inputData) {
         inputData.findBoundaries(lower, range);
@@ -45,7 +48,7 @@ public class Learner {
         }
         for (int i = 0; i < weights.getSize(); i++) {
             weights.setElement(i, 1.0);
-            selectionProbabilities.setElement(i, 1.0/15);
+            selectionProbabilities.setElement(i, 1.0/weights.getSize());
         }
     }
 
@@ -70,11 +73,12 @@ public class Learner {
     }
 
     private void algorithmTRFS() {
-        //TODO: look closer!!!
         double maxMistakesFrequency = 0.05;
         double currentMistakesFrequency = 1.0; // initially assume that we have 100% misses
         do{
+            System.out.println(selectionProbabilities);
             int index = randomFeature();
+//            System.out.println("index="+index);
             weights.setElement(index, weights.getElement(index) + epsilon);
 
             int testResult = mistakesQuantity(subsetA, subsetB);
@@ -83,6 +87,7 @@ public class Learner {
             boolean isBetter = mistakesFrequency < currentMistakesFrequency;
             if (isBetter) {
                 currentMistakesFrequency = mistakesFrequency;
+                System.out.println("mistakesFrequency = " + currentMistakesFrequency);
             }
             else {
                 weights.setElement(index, weights.getElement(index) - epsilon);
@@ -92,13 +97,14 @@ public class Learner {
     }
 
     private void adjustProbability(int index, boolean isBetter) {
+//        System.out.println("adjust for " + index + " " + isBetter);
         if (isBetter) {
             selectionProbabilities.setElement(index, selectionProbabilities.getElement(index) + delta);
         } else {
             if (selectionProbabilities.getElement(index) > delta) {
                 selectionProbabilities.setElement(index, selectionProbabilities.getElement(index) - delta);
-            } else {
-                selectionProbabilities.setElement(index, 0.0);
+//            } else {
+//                selectionProbabilities.setElement(index, delta);
             }
         }
         // normalize to make sum equal to 1.0
@@ -143,6 +149,11 @@ public class Learner {
     }
 
     private int randomFeature() { //TODO: test this
+        List<Pair<Integer, Double>> itemWeights = IntStream.range(0, selectionProbabilities.getSize())
+                .mapToObj(i -> new Pair<>(i, selectionProbabilities.getElement(i)))
+                .collect(Collectors.toList());
+        return new EnumeratedDistribution<>(itemWeights).sample();
+/*
         int[] numsToGenerate = new int[LCM]; // maybe make this as parameter and write some update for it by delta
         for (int i = 0, k = 0; i < Cell.DIM; i++) {
             for (int j = 0; j < selectionProbabilities.getElement(i) * LCM; j++) {
@@ -151,11 +162,15 @@ public class Learner {
             }
         }
         return numsToGenerate[random.nextInt(LCM)];
+*/
     }
 
     private void selectSubsets() {
-        int rmzMiddle = dataParticlesRMZ.size() / 2;
-        subsetA.addAll(rmzMiddle, dataParticlesRMZ);
+        int rmzMiddle = dataParticlesRMZ.size() * 3 / 4;
+        dataParticlesRMZ.stream()
+                .skip(rmzMiddle)
+                .collect(Collectors.toCollection(() -> subsetA));
+//        subsetA.addAll(rmzMiddle, dataParticlesRMZ);
         int rmzMass = subsetA.stream()
                 .map(DataParticle::mass)
                 .reduce(0, Integer::sum);
@@ -167,7 +182,10 @@ public class Learner {
             famMass += dataParticlesFAM.get(i).mass();
         }
         dataParticlesRMZ.stream().limit(rmzMiddle).collect(Collectors.toCollection(() -> subsetB));
-        subsetB.addAll(i, dataParticlesFAM);
+        dataParticlesFAM.stream()
+                .skip(i)
+                .collect(Collectors.toCollection(() -> subsetB));
+//        subsetB.addAll(i, dataParticlesFAM);
     }
 
     private void shrinkDP(List<DataParticle> dataParticles) {
@@ -207,6 +225,7 @@ public class Learner {
             cells.add(cell);
             centroid = new Cell(cell.classification, new GVector(cell.getPoint()));
         }
+
         public int mass() {
             return cells.size();
         }
