@@ -7,6 +7,7 @@ import org.jscience.mathematics.number.Rational;
 import javax.vecmath.GVector;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -16,6 +17,7 @@ public class Learner {
     private List<Cell> inputFAM = new ArrayList<>();
     private List<Cell> inputRMZ = new ArrayList<>();
     public double epsilon;
+    public double delta;
     public GVector lower = new GVector(Cell.DIM), range = new GVector(Cell.DIM);
     public List<DataParticle> dataParticlesFAM = new ArrayList<>();
     public List<DataParticle> dataParticlesRMZ = new ArrayList<>();
@@ -24,6 +26,9 @@ public class Learner {
     public GVector weights = new GVector(Cell.DIM);
     public GVector selectionProbabilities = new GVector(Cell.DIM);
     public Rational ratio;
+    public Random random = new Random();
+    public final int LCM = 360360;
+
     public Learner(InputData inputData) {
         inputData.findBoundaries(lower, range);
         range.sub(lower);
@@ -40,6 +45,7 @@ public class Learner {
         }
         for (int i = 0; i < weights.getSize(); i++) {
             weights.setElement(i, 1.0);
+            selectionProbabilities.setElement(i, 1.0/15);
         }
     }
 
@@ -52,15 +58,80 @@ public class Learner {
 
     public void learn() {
         prepareDP();
-        ratio = Rational.valueOf(dataParticlesFAM.size(), dataParticlesRMZ.size());
         shrinkDP(dataParticlesFAM);
         shrinkDP(dataParticlesRMZ);
+    }
+
+    public void findWeights() {
+        ratio = Rational.valueOf(dataParticlesFAM.size(), dataParticlesRMZ.size());
         selectSubsets();
         algorithmTRFS();
     }
 
     private void algorithmTRFS() {
-        //TODO: finish this
+        //TODO: look closer!!!
+        double maxMistakesFrequency = 0.05;
+        double currentMistakesFrequency;
+        do{
+            int index = randomFeature();
+            weights.setElement(index, weights.getElement(index) + epsilon);
+
+            int testResult = mistakesQuantity(subsetA, subsetB);
+            currentMistakesFrequency = testResult / (subsetB.size() + subsetB.size());
+
+            if (testResult < currentMistakesFrequency) {
+                currentMistakesFrequency = testResult;
+                selectionProbabilities.setElement(index, selectionProbabilities.getElement(index) + delta);
+            } else {
+                weights.setElement(index, weights.getElement(index) - epsilon);
+                if (selectionProbabilities.getElement(index) > delta) {
+                    selectionProbabilities.setElement(index, selectionProbabilities.getElement(index) - delta);
+                } else {
+                    selectionProbabilities.setElement(index, 0.0);
+                }
+            }
+        }while (currentMistakesFrequency > maxMistakesFrequency);
+    }
+
+    private int mistakesQuantity(List<DataParticle> subsetTeacher, List<DataParticle> subsetTester) { // TODO: look closer!!!!
+        int index = 0;
+        List<DataParticle> teacherFAM = new ArrayList<>();
+        List<DataParticle> teacherRMZ = new ArrayList<>();
+        for (DataParticle dataParticle : subsetTeacher) {
+            switch (dataParticle.centroid.classification) {
+                case FAM:
+                    teacherFAM.add(dataParticle);
+                    break;
+                case RMZ:
+                    teacherRMZ.add(dataParticle);
+                    break;
+            }
+        }
+        shrinkDP(teacherFAM);
+        shrinkDP(teacherRMZ);
+
+        for (int i = 0; i < subsetTester.size(); i++) {
+            double sumFam = 0, sumRmz = 0;
+            for (int j = 0, k = 0; j < teacherFAM.size() || k < teacherRMZ.size();j++, k++) { // TODO: is this correct????????? or make 2 for-loop???
+                DataParticle testdp = subsetTester.get(i);
+                sumFam += testdp.force(teacherFAM.get(j));
+                sumRmz += testdp.force(teacherRMZ.get(k));
+            }
+            if (subsetTester.get(i).centroid.classification != (sumFam > sumRmz ? Cell.Classification.FAM  : Cell.Classification.RMZ)) index++;
+        }
+
+        return index;
+    }
+
+    private int randomFeature() { //TODO: test this
+        int[] numsToGenerate = new int[LCM]; // maybe make this as parameter and write some update for it by delta
+        for (int i = 0, k = 0; i < Cell.DIM; i++) {
+            for (int j = 0; j < selectionProbabilities.getElement(i) * LCM; j++) {
+                numsToGenerate[k] = i;
+                k++;
+            }
+        }
+        return numsToGenerate[random.nextInt(LCM)];
     }
 
     private void selectSubsets() {
@@ -135,6 +206,11 @@ public class Learner {
             double k = (double)dataParticle.mass() / (dataParticle.mass() + mass());
             centroid.getPoint().interpolate(dataParticle.centroid.getPoint(), k);
             cells.addAll(dataParticle.cells);
+        }
+
+        public double force(DataParticle dp) {
+            double distance = distance(dp);
+            return mass() * dp.mass() / distance * distance;
         }
     }
 }
