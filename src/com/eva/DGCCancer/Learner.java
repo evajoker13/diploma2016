@@ -17,7 +17,7 @@ public class Learner {
     private List<Cell> inputFAM = new ArrayList<>();
     private List<Cell> inputRMZ = new ArrayList<>();
     public double epsilon;
-    public double delta;
+    public double delta = 0.1;
     public GVector lower = new GVector(Cell.DIM), range = new GVector(Cell.DIM);
     public List<DataParticle> dataParticlesFAM = new ArrayList<>();
     public List<DataParticle> dataParticlesRMZ = new ArrayList<>();
@@ -60,6 +60,7 @@ public class Learner {
         prepareDP();
         shrinkDP(dataParticlesFAM);
         shrinkDP(dataParticlesRMZ);
+        findWeights();
     }
 
     public void findWeights() {
@@ -71,26 +72,43 @@ public class Learner {
     private void algorithmTRFS() {
         //TODO: look closer!!!
         double maxMistakesFrequency = 0.05;
-        double currentMistakesFrequency;
+        double currentMistakesFrequency = 1.0; // initially assume that we have 100% misses
         do{
             int index = randomFeature();
             weights.setElement(index, weights.getElement(index) + epsilon);
 
             int testResult = mistakesQuantity(subsetA, subsetB);
-            currentMistakesFrequency = testResult / (subsetB.size() + subsetB.size());
+            double mistakesFrequency = (double)testResult / subsetB.size();
 
-            if (testResult < currentMistakesFrequency) {
-                currentMistakesFrequency = testResult;
-                selectionProbabilities.setElement(index, selectionProbabilities.getElement(index) + delta);
-            } else {
-                weights.setElement(index, weights.getElement(index) - epsilon);
-                if (selectionProbabilities.getElement(index) > delta) {
-                    selectionProbabilities.setElement(index, selectionProbabilities.getElement(index) - delta);
-                } else {
-                    selectionProbabilities.setElement(index, 0.0);
-                }
+            boolean isBetter = mistakesFrequency < currentMistakesFrequency;
+            if (isBetter) {
+                currentMistakesFrequency = mistakesFrequency;
             }
-        }while (currentMistakesFrequency > maxMistakesFrequency);
+            else {
+                weights.setElement(index, weights.getElement(index) - epsilon);
+            }
+            adjustProbability(index, isBetter);
+        } while (currentMistakesFrequency > maxMistakesFrequency);
+    }
+
+    private void adjustProbability(int index, boolean isBetter) {
+        if (isBetter) {
+            selectionProbabilities.setElement(index, selectionProbabilities.getElement(index) + delta);
+        } else {
+            if (selectionProbabilities.getElement(index) > delta) {
+                selectionProbabilities.setElement(index, selectionProbabilities.getElement(index) - delta);
+            } else {
+                selectionProbabilities.setElement(index, 0.0);
+            }
+        }
+        // normalize to make sum equal to 1.0
+        double sum = 0;
+        for (int i = 0; i < selectionProbabilities.getSize(); i++) {
+            sum += selectionProbabilities.getElement(i);
+        }
+        for (int i = 0; i < selectionProbabilities.getSize(); i++) {
+            selectionProbabilities.setElement(i, selectionProbabilities.getElement(i)/sum);
+        }
     }
 
     private int mistakesQuantity(List<DataParticle> subsetTeacher, List<DataParticle> subsetTester) { // TODO: look closer!!!!
@@ -107,20 +125,21 @@ public class Learner {
                     break;
             }
         }
-        shrinkDP(teacherFAM);
-        shrinkDP(teacherRMZ);
 
-        for (int i = 0; i < subsetTester.size(); i++) {
-            double sumFam = 0, sumRmz = 0;
-            for (int j = 0, k = 0; j < teacherFAM.size() || k < teacherRMZ.size();j++, k++) { // TODO: is this correct????????? or make 2 for-loop???
-                DataParticle testdp = subsetTester.get(i);
-                sumFam += testdp.force(teacherFAM.get(j));
-                sumRmz += testdp.force(teacherRMZ.get(k));
-            }
-            if (subsetTester.get(i).centroid.classification != (sumFam > sumRmz ? Cell.Classification.FAM  : Cell.Classification.RMZ)) index++;
+        for (DataParticle testDP : subsetTester) {
+            double sumFam = sumForces(testDP, teacherFAM);
+            double sumRmz = sumForces(testDP, teacherRMZ);
+            if (testDP.centroid.classification != (sumFam > sumRmz ? Cell.Classification.FAM : Cell.Classification.RMZ))
+                index++;
         }
 
         return index;
+    }
+
+    double sumForces(DataParticle testDP, List<DataParticle> particles) {
+        return particles.stream()
+                .map(dataParticle -> testDP.force(dataParticle))
+                .reduce((double)0, Double::sum);
     }
 
     private int randomFeature() { //TODO: test this
