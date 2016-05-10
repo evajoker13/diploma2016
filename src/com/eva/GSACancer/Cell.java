@@ -50,6 +50,12 @@ public class Cell {
     }
 
     @Override
+    public Cell clone() {
+        GVector vector = new GVector(point);
+        return new Cell(classification, vector);
+    }
+
+    @Override
     public String toString() {
         return "Cell{" +
                 "classification=" + classification +

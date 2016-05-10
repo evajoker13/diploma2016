@@ -25,6 +25,14 @@ public class InputData {
         return inputData;
     }
 
+    public static InputData fromCells(List<Cell> cells) {
+        InputData inputData = new InputData();
+        for (Cell cell : cells) {
+            inputData.cells.add(cell);
+        }
+        return inputData;
+    }
+
     public void loadFromScanner(Scanner sc, Cell.Classification classification) {
         for (;sc.hasNextInt();) {
             int number = sc.nextInt();

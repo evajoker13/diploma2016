@@ -75,8 +75,9 @@ public class Learner {
     private void algorithmTRFS() {
         double maxMistakesFrequency = 0.05;
         double currentMistakesFrequency = 1.0; // initially assume that we have 100% misses
+        weights.zero(); // initial guess - no difference between nodes
         do{
-            System.out.println(selectionProbabilities);
+//            System.out.println(selectionProbabilities);
             int index = randomFeature();
 //            System.out.println("index="+index);
             weights.setElement(index, weights.getElement(index) + epsilon);
@@ -85,11 +86,13 @@ public class Learner {
             double mistakesFrequency = (double)testResult / subsetB.size();
 
             boolean isBetter = mistakesFrequency < currentMistakesFrequency;
+            boolean isWorse = mistakesFrequency > currentMistakesFrequency;
             if (isBetter) {
                 currentMistakesFrequency = mistakesFrequency;
+                System.out.println("weights=" + weights);;
                 System.out.println("mistakesFrequency = " + currentMistakesFrequency);
             }
-            else {
+            else /*if (isWorse)*/ {
                 weights.setElement(index, weights.getElement(index) - epsilon);
             }
             adjustProbability(index, isBetter);
@@ -166,7 +169,7 @@ public class Learner {
     }
 
     private void selectSubsets() {
-        int rmzMiddle = dataParticlesRMZ.size() * 3 / 4;
+        int rmzMiddle = dataParticlesRMZ.size() / 2;
         dataParticlesRMZ.stream()
                 .skip(rmzMiddle)
                 .collect(Collectors.toCollection(() -> subsetA));
@@ -203,7 +206,7 @@ public class Learner {
         }
     }
 
-    private void prepareDP() {
+    void prepareDP() {
         for (Cell cell : inputFAM) {
             DataParticle dp = new DataParticle(cell);
             dataParticlesFAM.add(dp);
