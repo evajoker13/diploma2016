@@ -9,7 +9,6 @@ import org.jscience.mathematics.number.Rational;
 import javax.vecmath.GVector;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -19,7 +18,7 @@ import java.util.stream.IntStream;
 public class Learner {
     private List<Cell> inputFAM = new ArrayList<>();
     private List<Cell> inputRMZ = new ArrayList<>();
-    public double epsilon = 0.001;
+    public double epsilon = 0.0000001;
     public double delta = 0.1;
     public GVector lower = new GVector(Cell.DIM), range = new GVector(Cell.DIM);
     public List<DataParticle> dataParticlesFAM = new ArrayList<>();
@@ -29,8 +28,8 @@ public class Learner {
     public GVector weights = new GVector(Cell.DIM);
     public GVector selectionProbabilities = new GVector(Cell.DIM);
     public Rational ratio;
-    public Random random = new Random();
-    public final int LCM = 24024;
+//    public Random random = new Random();
+//    public final int LCM = 24024;
 
     public Learner(InputData inputData) {
         inputData.findBoundaries(lower, range);
@@ -53,10 +52,10 @@ public class Learner {
     }
 
     void normalize(Cell cell) {
-        cell.getPoint().sub(lower);
-        for (int i = 0; i < cell.getPoint().getSize(); i++) {
-            cell.getPoint().setElement(i, cell.getPoint().getElement(i) / range.getElement(i));
-        }
+//        cell.getPoint().sub(lower);
+//        for (int i = 0; i < cell.getPoint().getSize(); i++) {
+//            cell.getPoint().setElement(i, cell.getPoint().getElement(i) / range.getElement(i));
+//        }
     }
 
     public void learn() {
@@ -237,8 +236,10 @@ public class Learner {
             double sum = 0;
             for (int i = 0; i < centroid.getPoint().getSize(); i++) {
                 double element = centroid.getPoint().getElement(i) - dataParticle.centroid.getPoint().getElement(i);
+//                System.out.println("dx["+i+"]="+element+", w="+weights.getElement(i));
                 sum += element * element * weights.getElement(i);
             }
+//            System.out.println("sum="+sum);
             return Math.sqrt(sum);
         }
 
@@ -251,7 +252,8 @@ public class Learner {
 
         public double force(DataParticle dp) {
             double distance = distance(dp);
-            return mass() * dp.mass() / distance * distance;
+//            System.out.println("m1="+mass()+", m2="+dp.mass()+", R="+distance);
+            return mass() * dp.mass() / (distance * distance);
         }
     }
 }

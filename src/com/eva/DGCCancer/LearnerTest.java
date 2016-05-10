@@ -2,8 +2,6 @@ package com.eva.DGCCancer;
 
 import com.eva.GSACancer.Cell;
 import com.eva.GSACancer.InputData;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
@@ -12,6 +10,9 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+
 /**
  * Created by nikolay on 10/05/16.
  */
@@ -19,12 +20,16 @@ public class LearnerTest {
     @Test
     public void testForce() {
         InputData inputData = InputData.fromCells(new Cell[]{Cell.fam(0, 1), Cell.rmz(1, 0), Cell.fam(0,2), Cell.rmz(2,0)});
+        System.out.println(inputData);
         Learner learner = new Learner(inputData);
         learner.prepareDP();
+        assertEquals(learner.dataParticlesFAM.get(0).force(learner.dataParticlesFAM.get(1)), 1, 1e-5);
+        assertEquals(learner.dataParticlesFAM.get(0).force(learner.dataParticlesRMZ.get(0)), 0.5, 1e-5);
         double famFAM = learner.sumForces(learner.dataParticlesFAM.get(0), learner.dataParticlesFAM);
         double famRMZ = learner.sumForces(learner.dataParticlesFAM.get(0), learner.dataParticlesRMZ);
         System.out.println(famFAM);
         System.out.println(famRMZ);
+        assertTrue(famFAM > famRMZ, famFAM+">"+famRMZ);
     }
 
     @Test
