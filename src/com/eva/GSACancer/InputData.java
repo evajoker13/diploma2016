@@ -1,5 +1,7 @@
 package com.eva.GSACancer;
 
+import com.sun.istack.internal.NotNull;
+
 import javax.vecmath.GVector;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +14,11 @@ import java.util.Scanner;
  */
 public class InputData {
     private List<Cell> cells = new ArrayList<>();
+
+    public int featuresNum() {
+        assert cells.size() > 0;
+        return cells.get(0).getPoint().getSize();
+    }
 
     public List<Cell> getCells() {
         return cells;
@@ -48,7 +55,9 @@ public class InputData {
         }
     }
 
-    public void findBoundaries(GVector lower, GVector upper){
+    public void findBoundaries(@NotNull GVector lower, @NotNull GVector upper){
+        assert cells.size() > 0;
+
         lower.set(cells.get(0).getPoint());
         upper.set(cells.get(0).getPoint());
         for (Cell cell:cells) {

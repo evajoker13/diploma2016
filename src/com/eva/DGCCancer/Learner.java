@@ -54,9 +54,9 @@ public class Learner {
 
     void normalize(Cell cell) {
         cell.getPoint().sub(lower);
-        for (int i = 0; i < cell.getPoint().getSize(); i++) {
-            cell.getPoint().setElement(i, cell.getPoint().getElement(i) / range.getElement(i));
-        }
+//        for (int i = 0; i < cell.getPoint().getSize(); i++) {
+//            cell.getPoint().setElement(i, cell.getPoint().getElement(i) / range.getElement(i));
+//        }
     }
 
     public void learn() {

@@ -96,6 +96,7 @@ public class Learner {
     }
 
     public void calcMasses() {
+        assert agents.length > 0;
         double[] fitnesses = new double[agents.length];
         fitnesses[0] = agents[0].fitness();
         double best = fitnesses[0];
@@ -278,6 +279,7 @@ public class Learner {
         }
 
         public double fitness1(){
+            assert clusters.length > 0;
             double [] sumsOfDistances = new double[clusters.length];
             for (Cluster cluster : clusters) {
                 cluster.classification = Cell.Classification.Unknown;
