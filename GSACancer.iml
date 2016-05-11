@@ -29,5 +29,6 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="org.apache.commons:commons-math3:Release" level="project" />
+    <orderEntry type="library" name="org.processing:core:3.0b7" level="project" />
   </component>
 </module>
