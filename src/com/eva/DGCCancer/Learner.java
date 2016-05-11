@@ -257,7 +257,7 @@ public class Learner {
 
         public double force(DataParticle dp) {
             double distance = distance(dp);
-            return mass() * dp.mass() / distance * distance;
+            return mass() * dp.mass() / (distance * distance);
         }
     }
 }
