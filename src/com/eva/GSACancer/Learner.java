@@ -18,22 +18,30 @@ public class Learner {
     double[] masses;
     Agent [] accelerations;
     Agent[] velocities;
-    private GVector lower = new GVector(Cell.DIM);
-    private GVector upper = new GVector(Cell.DIM);
+    private final GVector lower;
+    private final GVector upper;
     public Agent [] agents;
     public final int defaultAgentsNum = 10;
+    public final int featuresNum;
     private int clustersNum;
     private int epoch;
     private static Random randomGenerator = new Random();
 
     public Learner(InputData inputData) {
-       this.inputData = inputData;
-       inputData.findBoundaries(lower, upper);
+        this.inputData = inputData;
+        featuresNum = inputData.featuresNum();
+        lower = new GVector(featuresNum);
+        upper = new GVector(featuresNum);
+        inputData.findBoundaries(lower, upper);
         clustersNum = inputData.getCells().size() / 5;
+        if (clustersNum < 2) clustersNum = 2;
     }
 
     public Learner(InputData inputData, int clustersNum) {
         this.inputData = inputData;
+        featuresNum = inputData.featuresNum();
+        lower = new GVector(featuresNum);
+        upper = new GVector(featuresNum);
         inputData.findBoundaries(lower, upper);
         this.clustersNum = clustersNum;
     }
@@ -83,8 +91,8 @@ public class Learner {
     }
 
     Cluster generateCluster() {
-        Cluster cluster = new Cluster();
-        for(int i = 0; i<Cell.DIM; i++) {
+        Cluster cluster = new Cluster(featuresNum);
+        for(int i = 0; i<featuresNum; i++) {
             cluster.center.setElement(i, lower.getElement(i) + randomGenerator.nextDouble()*(upper.getElement(i) - lower.getElement(i)));
         }
 
@@ -207,8 +215,7 @@ public class Learner {
         public Agent() {
             clusters = new Cluster[clustersNum];
             for (int i = 0; i < clusters.length; i++) {
-                clusters[i] = new Cluster();
-                clusters[i].center = new GVector(Cell.DIM);
+                clusters[i] = new Cluster(featuresNum);
                 clusters[i].center.zero();
             }
         }

@@ -12,8 +12,9 @@ public class Cluster implements Comparable<Cluster> {
     public Cell.Classification classification;
     private int rmzCalc;
     private int famCalc;
-    public Cluster() {
-        center = new GVector(Cell.DIM);
+    public Cluster() {}
+    public Cluster(int featureNum) {
+        center = new GVector(featureNum);
     }
 
     public double distance(GVector point) {

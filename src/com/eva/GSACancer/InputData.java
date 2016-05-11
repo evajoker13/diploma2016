@@ -41,12 +41,13 @@ public class InputData {
     }
 
     public void loadFromScanner(Scanner sc, Cell.Classification classification) {
+        final int featuresNum = Cell.DIM;
         for (;sc.hasNextInt();) {
             int number = sc.nextInt();
             for(int i = 0; i<number; i++){
-                double[] values = new double[Cell.DIM];
+                double[] values = new double[featuresNum];
                 sc.nextInt();
-                for(int j = 0; j<Cell.DIM; j++){
+                for(int j = 0; j < featuresNum; j++){
                     values[j] = sc.nextDouble();
                 }
                 Cell cell = new Cell(classification,new GVector(values));
@@ -60,8 +61,9 @@ public class InputData {
 
         lower.set(cells.get(0).getPoint());
         upper.set(cells.get(0).getPoint());
+        final int featuresNum = lower.getSize();
         for (Cell cell:cells) {
-            for (int i = 0; i<Cell.DIM; i++){
+            for (int i = 0; i < featuresNum; i++){
                 double value = cell.getPoint().getElement(i);
                 if (value < lower.getElement(i)) {
                     lower.setElement(i, value);
