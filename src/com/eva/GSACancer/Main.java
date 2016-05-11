@@ -14,7 +14,7 @@ public class Main {
         InputData inputData = new InputData();
         try {
             Scanner sc = new Scanner(new BufferedReader(new FileReader("/home/eva/workspaceEclipse/GSACancer/data/a.pok")));
-            inputData.loadFromScanner(sc, Cell.Classification.FAM);
+            inputData.loadPokFromScanner(sc, Cell.Classification.FAM);
             sc.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -22,7 +22,7 @@ public class Main {
         }
         try {
             Scanner sc = new Scanner(new BufferedReader(new FileReader("/home/eva/workspaceEclipse/GSACancer/data/b.pok")));
-            inputData.loadFromScanner(sc, Cell.Classification.RMZ);
+            inputData.loadPokFromScanner(sc, Cell.Classification.RMZ);
             sc.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -38,7 +38,7 @@ public class Main {
 
         try {
             Scanner sc = new Scanner(new BufferedReader(new FileReader("/home/eva/workspaceEclipse/GSACancer/data/c.pok")));
-            newInputData.loadFromScanner(sc, Cell.Classification.Unknown);
+            newInputData.loadPokFromScanner(sc, Cell.Classification.Unknown);
             sc.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();

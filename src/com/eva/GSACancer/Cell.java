@@ -7,7 +7,6 @@ import javax.vecmath.GVector;
  */
 public class Cell {
 
-    public final static int DIM = 15;
     private GVector point;
     public Classification classification;
     public Cell(Classification classification, GVector point){
@@ -18,10 +17,7 @@ public class Cell {
     public Cell(Classification classification, double x, double y)
     {
         this.classification = classification;
-        this.point = new GVector(Cell.DIM);
-        point.zero();
-        this.point.setElement(0, x);
-        this.point.setElement(1, y);
+        this.point = new GVector(new double[] {x, y});
     }
 
     public static Cell fam(double x, double y)

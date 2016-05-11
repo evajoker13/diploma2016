@@ -29,7 +29,7 @@ public class Main {
         System.out.println(("Loading file " + fileName));
         try {
             Scanner sc = new Scanner(new BufferedReader(new FileReader(fileName)));
-            inputData.loadFromScanner(sc, classification);
+            inputData.loadPokFromScanner(sc, classification);
             sc.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();

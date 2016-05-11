@@ -40,8 +40,8 @@ public class InputData {
         return inputData;
     }
 
-    public void loadFromScanner(Scanner sc, Cell.Classification classification) {
-        final int featuresNum = Cell.DIM;
+    public void loadPokFromScanner(Scanner sc, Cell.Classification classification) {
+        final int featuresNum = 15;
         for (;sc.hasNextInt();) {
             int number = sc.nextInt();
             for(int i = 0; i<number; i++){

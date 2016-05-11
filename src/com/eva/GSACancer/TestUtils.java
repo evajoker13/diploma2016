@@ -7,10 +7,6 @@ import javax.vecmath.GVector;
  */
 public class TestUtils {
         public static GVector vec(double x, double y) {
-            GVector v = new GVector(Cell.DIM);
-            v.zero();
-            v.setElement(0, x);
-            v.setElement(1, y);
-            return v;
+            return new GVector(new double[] {x, y});
         }
 }
