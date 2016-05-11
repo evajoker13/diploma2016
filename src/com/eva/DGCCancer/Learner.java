@@ -20,18 +20,22 @@ public class Learner {
     private List<Cell> inputRMZ = new ArrayList<>();
     public double epsilon = 0.0000001;
     public double delta = 0.1;
-    public GVector lower = new GVector(Cell.DIM), range = new GVector(Cell.DIM);
+    public final GVector lower, range;
     public List<DataParticle> dataParticlesFAM = new ArrayList<>();
     public List<DataParticle> dataParticlesRMZ = new ArrayList<>();
     public List<DataParticle> subsetA = new ArrayList<>();
     public List<DataParticle> subsetB = new ArrayList<>();
-    public GVector weights = new GVector(Cell.DIM);
-    public GVector selectionProbabilities = new GVector(Cell.DIM);
+    public GVector weights;
+    public GVector selectionProbabilities;
     public Rational ratio;
 //    public Random random = new Random();
 //    public final int LCM = 24024;
 
     public Learner(InputData inputData) {
+        int featuresNum = inputData.featuresNum();
+        // calculate parameters for normalization
+        lower = new GVector(featuresNum);
+        range = new GVector(featuresNum);
         inputData.findBoundaries(lower, range);
         range.sub(lower);
         for (Cell cell : inputData.getCells()) {
@@ -45,6 +49,8 @@ public class Learner {
                     break;
             }
         }
+        weights = new GVector(featuresNum);
+        selectionProbabilities = new GVector(featuresNum);
         for (int i = 0; i < weights.getSize(); i++) {
             weights.setElement(i, 1.0);
             selectionProbabilities.setElement(i, 1.0/weights.getSize());

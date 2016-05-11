@@ -29,7 +29,7 @@ public class LearnerTest {
         double famRMZ = learner.sumForces(learner.dataParticlesFAM.get(0), learner.dataParticlesRMZ);
         System.out.println(famFAM);
         System.out.println(famRMZ);
-        assertTrue(famFAM > famRMZ, famFAM+">"+famRMZ);
+        assertTrue(famFAM > famRMZ, famFAM + ">" + famRMZ);
     }
 
     @Test
