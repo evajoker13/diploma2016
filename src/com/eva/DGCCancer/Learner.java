@@ -78,6 +78,7 @@ public class Learner {
     }
 
     private void algorithmTRFS() {
+        boolean[] triedWeights = new boolean[weights.getSize()]; // markers for weights that were tried since last improvement
         double maxMistakesFrequency = 0.05;
         double currentMistakesFrequency = 1.0; // initially assume that we have 100% misses
         weights.zero(); // initial guess - no difference between nodes
@@ -92,15 +93,25 @@ public class Learner {
 
             boolean isBetter = mistakesFrequency < currentMistakesFrequency;
             boolean isWorse = mistakesFrequency > currentMistakesFrequency;
+            adjustProbability(index, isBetter);
             if (isBetter) {
                 currentMistakesFrequency = mistakesFrequency;
                 System.out.println("weights=" + weights);;
                 System.out.println("mistakesFrequency = " + currentMistakesFrequency);
+                // reset flags triedWeights
+                IntStream.range(0, triedWeights.length).forEach(i -> triedWeights[i] = false);
             }
             else /*if (isWorse)*/ {
                 weights.setElement(index, weights.getElement(index) - epsilon);
+                if (!triedWeights[index]) {
+                    triedWeights[index] = true;
+                    boolean triedAll = IntStream.range(0, triedWeights.length)
+                            .mapToObj(i -> triedWeights[i]).allMatch(Boolean::booleanValue);
+                    if (triedAll) {
+                        return; // break this cycle
+                    }
+                }
             }
-            adjustProbability(index, isBetter);
         } while (currentMistakesFrequency > maxMistakesFrequency);
     }
 
