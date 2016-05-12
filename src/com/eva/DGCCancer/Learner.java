@@ -31,6 +31,12 @@ public class Learner {
 //    public Random random = new Random();
 //    public final int LCM = 24024;
 
+    public double getCurrentMistakesFrequency() {
+        return currentMistakesFrequency;
+    }
+
+    private double currentMistakesFrequency = 1.0;
+
     public Learner(InputData inputData) {
         int featuresNum = inputData.featuresNum();
         // calculate parameters for normalization
@@ -78,9 +84,13 @@ public class Learner {
     }
 
     private void algorithmTRFS() {
+        algorithmTRFS(0.05);
+    }
+
+    private void algorithmTRFS(double maxMistakesFrequency) {
         boolean[] triedWeights = new boolean[weights.getSize()]; // markers for weights that were tried since last improvement
-        double maxMistakesFrequency = 0.05;
-        double currentMistakesFrequency = 1.0; // initially assume that we have 100% misses
+        // initially assume that we have 100% misses
+        currentMistakesFrequency = 1.0;
         weights.zero(); // initial guess - no difference between nodes
         do{
 //            System.out.println(selectionProbabilities);

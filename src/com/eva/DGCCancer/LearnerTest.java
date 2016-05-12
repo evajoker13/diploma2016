@@ -56,6 +56,7 @@ public class LearnerTest {
         InputData inputData = InputData.fromCells(all);
         Learner learner = new Learner(inputData);
         learner.learn();
+        assertTrue(learner.getCurrentMistakesFrequency() < 0.05);
     }
 
     @Test
@@ -74,6 +75,7 @@ public class LearnerTest {
         InputData inputData = InputData.fromCells(all);
         Learner learner = new Learner(inputData);
         learner.learn();
+        assertTrue(learner.getCurrentMistakesFrequency() < 0.05);
     }
 //    @Test
 //    public void test1() {
