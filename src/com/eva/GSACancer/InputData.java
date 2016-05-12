@@ -3,9 +3,11 @@ package com.eva.GSACancer;
 import com.sun.istack.internal.NotNull;
 
 import javax.vecmath.GVector;
+import java.io.BufferedReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.IntStream;
 
 /**
  * Created by eva on 4/30/16.
@@ -54,6 +56,21 @@ public class InputData {
                 cells.add(cell);
             }
         }
+    }
+
+    public void loadWdbcFromScanner(BufferedReader bufferedReader) {
+        bufferedReader.lines()
+                .forEach(s -> cells.add(parseWdbc(s)));
+        assert cells.size() > 0;
+    }
+
+    private static Cell parseWdbc(String line) {
+        String[] columns = line.split(",");
+        Cell.Classification classification = columns[1].compareTo("M") == 0 ? Cell.Classification.RMZ : Cell.Classification.FAM;
+        GVector features = new GVector(columns.length - 2);
+        IntStream.range(2, columns.length)
+                .forEach(i -> features.setElement(i-2, Double.parseDouble(columns[i])));
+        return new Cell(classification, features);
     }
 
     public void findBoundaries(@NotNull GVector lower, @NotNull GVector upper){

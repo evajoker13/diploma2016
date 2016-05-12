@@ -71,6 +71,8 @@ public class Learner {
     }
 
     public void learn() {
+        assert inputFAM.size() > 0;
+        assert inputRMZ.size() > 0;
         prepareDP();
         shrinkDP(dataParticlesFAM);
         shrinkDP(dataParticlesRMZ);
