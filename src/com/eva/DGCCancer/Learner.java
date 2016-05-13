@@ -8,6 +8,7 @@ import org.jscience.mathematics.number.Rational;
 
 import javax.vecmath.GVector;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -90,7 +91,7 @@ public class Learner {
     }
 
     private void algorithmTRFS(double maxMistakesFrequency) {
-        boolean[] triedWeights = new boolean[weights.getSize()]; // markers for weights that were tried since last improvement
+        BitSet triedWeights = new BitSet(weights.getSize()); // markers for weights that were tried since last improvement
         // initially assume that we have 100% misses
         currentMistakesFrequency = 1.0;
         weights.zero(); // initial guess - no difference between nodes
@@ -104,23 +105,21 @@ public class Learner {
             double mistakesFrequency = (double)testResult / subsetB.size();
 
             boolean isBetter = mistakesFrequency < currentMistakesFrequency;
-            boolean isWorse = mistakesFrequency > currentMistakesFrequency;
             adjustProbability(index, isBetter);
             if (isBetter) {
                 currentMistakesFrequency = mistakesFrequency;
                 System.out.println("weights=" + weights);;
                 System.out.println("mistakesFrequency = " + currentMistakesFrequency);
-                // reset flags triedWeights
-                IntStream.range(0, triedWeights.length).forEach(i -> triedWeights[i] = false);
+                // reset flags triedWeights since now new tries may give some results
+                triedWeights.clear();
             }
-            else /*if (isWorse)*/ {
+            else {
                 weights.setElement(index, weights.getElement(index) - epsilon);
-                if (!triedWeights[index]) {
-                    triedWeights[index] = true;
-                    boolean triedAll = IntStream.range(0, triedWeights.length)
-                            .mapToObj(i -> triedWeights[i]).allMatch(Boolean::booleanValue);
+                if (!triedWeights.get(index)) { // only if we hit this index first time since last improve
+                    triedWeights.set(index); // mark this index as tried
+                    boolean triedAll = triedWeights.cardinality() == weights.getSize();
                     if (triedAll) {
-                        return; // break this cycle
+                        break; // break this cycle
                     }
                 }
             }
