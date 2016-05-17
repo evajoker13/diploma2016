@@ -37,6 +37,8 @@ public class Learner {
     }
 
     private double currentMistakesFrequency = 1.0;
+    public double currentMistakesQuantityFAM;
+    public double currentMistakesQuantityRMZ;
 
     public Learner(InputData inputData) {
         int featuresNum = inputData.featuresNum();
@@ -98,11 +100,15 @@ public class Learner {
         do{
 //            System.out.println(selectionProbabilities);
             int index = randomFeature();
+            currentMistakesQuantityFAM = 0;
+            currentMistakesQuantityRMZ = 0;
 //            System.out.println("index="+index);
             weights.setElement(index, weights.getElement(index) + epsilon);
 
             int testResult = mistakesQuantity(subsetA, subsetB);
             double mistakesFrequency = (double)testResult / subsetB.size();
+            double famMistakesFrequency = currentMistakesQuantityFAM / subsetB.size();
+            double rmzMistakesFrequency = currentMistakesQuantityRMZ / subsetB.size();
 
             boolean isBetter = mistakesFrequency < currentMistakesFrequency;
             adjustProbability(index, isBetter);
@@ -110,6 +116,8 @@ public class Learner {
                 currentMistakesFrequency = mistakesFrequency;
                 System.out.println("weights=" + weights);;
                 System.out.println("mistakesFrequency = " + currentMistakesFrequency);
+                System.out.println("famMistakesFrequency = " + famMistakesFrequency);
+                System.out.println("rmzMistakesFrequency = " + rmzMistakesFrequency);
                 // reset flags triedWeights since now new tries may give some results
                 triedWeights.clear();
             }
@@ -165,12 +173,20 @@ public class Learner {
         for (DataParticle testDP : subsetTester) {
             double sumFam = sumForces(testDP, teacherFAM);
             double sumRmz = sumForces(testDP, teacherRMZ);
-            if (testDP.centroid.classification != (sumFam > sumRmz ? Cell.Classification.FAM : Cell.Classification.RMZ))
+            if (sumFam > sumRmz && testDP.centroid.classification != Cell.Classification.FAM) {
                 index++;
+                currentMistakesQuantityFAM++;
+            }
+            if (sumRmz > sumFam && testDP.centroid.classification != Cell.Classification.RMZ) {
+                index++;
+                currentMistakesQuantityRMZ++;
+            }
+//            if (testDP.centroid.classification != (sumFam > sumRmz ? Cell.Classification.FAM : Cell.Classification.RMZ))
+//                index++;
         }
 
-        return index;
-    }
+            return index;
+        }
 
     double sumForces(DataParticle testDP, List<DataParticle> particles) {
         return particles.stream()

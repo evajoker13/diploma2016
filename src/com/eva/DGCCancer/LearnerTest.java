@@ -20,7 +20,7 @@ public class LearnerTest {
     @Test
     public void testForce() {
         InputData inputData = InputData.fromCells(new Cell[]{Cell.fam(0, 1), Cell.rmz(1, 0), Cell.fam(0,2), Cell.rmz(2,0)});
-        System.out.println(inputData);
+        System.out.println(inputData.getCells().toString());
         Learner learner = new Learner(inputData);
         learner.prepareDP();
         assertEquals(learner.dataParticlesFAM.get(0).force(learner.dataParticlesFAM.get(1)), 1, 1e-5);
