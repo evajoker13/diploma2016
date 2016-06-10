@@ -97,6 +97,10 @@ public class Learner {
         // initially assume that we have 100% misses
         currentMistakesFrequency = 1.0;
         weights.zero(); // initial guess - no difference between nodes
+        long testFamQuantity = subsetB.stream()
+                .filter(dataParticle -> dataParticle.centroid.classification == Cell.Classification.FAM)
+                .count();
+        long testRmzQuantity = subsetB.size() - testFamQuantity;
         do{
 //            System.out.println(selectionProbabilities);
             int index = randomFeature();
@@ -107,8 +111,8 @@ public class Learner {
 
             int testResult = mistakesQuantity(subsetA, subsetB);
             double mistakesFrequency = (double)testResult / subsetB.size();
-            double famMistakesFrequency = currentMistakesQuantityFAM / subsetB.size();
-            double rmzMistakesFrequency = currentMistakesQuantityRMZ / subsetB.size();
+            double famMistakesFrequency = currentMistakesQuantityFAM / testFamQuantity;
+            double rmzMistakesFrequency = currentMistakesQuantityRMZ / testRmzQuantity;
 
             boolean isBetter = mistakesFrequency < currentMistakesFrequency;
             adjustProbability(index, isBetter);
@@ -173,11 +177,11 @@ public class Learner {
         for (DataParticle testDP : subsetTester) {
             double sumFam = sumForces(testDP, teacherFAM);
             double sumRmz = sumForces(testDP, teacherRMZ);
-            if (sumFam > sumRmz && testDP.centroid.classification != Cell.Classification.FAM) {
+            if (sumFam >= sumRmz && testDP.centroid.classification != Cell.Classification.FAM) {
                 index++;
                 currentMistakesQuantityFAM++;
             }
-            if (sumRmz > sumFam && testDP.centroid.classification != Cell.Classification.RMZ) {
+            if (sumRmz >= sumFam && testDP.centroid.classification != Cell.Classification.RMZ) {
                 index++;
                 currentMistakesQuantityRMZ++;
             }
