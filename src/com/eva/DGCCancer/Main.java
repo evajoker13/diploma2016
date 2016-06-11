@@ -54,8 +54,10 @@ public class Main {
     private static void loadPokFile(InputData inputData, String fileName, Cell.Classification classification) {
         System.out.println("Loading POK file " + fileName + " for " + classification);
         try {
-            Scanner sc = new Scanner(new BufferedReader(new FileReader(fileName)));
-            inputData.loadPokFromScanner(sc, classification);
+            BufferedReader source = new BufferedReader(new FileReader(fileName));
+            Scanner sc = new Scanner(source).useLocale(Locale.ENGLISH);
+//            inputData.loadPokFromScanner(sc, classification);
+            inputData.loadStatPokFromScanner(sc, classification);
             sc.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();

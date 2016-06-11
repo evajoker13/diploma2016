@@ -58,6 +58,33 @@ public class InputData {
         }
     }
 
+    public void loadStatPokFromScanner(Scanner sc, Cell.Classification classification) {
+        final int featuresNum = 15;
+        for (;sc.hasNextInt();) {
+            int number = sc.nextInt();
+            double[] values = new double[3*featuresNum];
+            for (int j = 0; j < featuresNum; ++j)
+            {
+                values[j + 0*featuresNum] = Double.MAX_VALUE;
+                values[j + 1*featuresNum] = 0;
+                values[j + 2*featuresNum] = Double.MIN_VALUE;
+            }
+            for(int i = 0; i<number; i++) {
+                sc.nextInt();
+                for(int j = 0; j < featuresNum; j++){
+                    final double value = sc.nextDouble();
+                    if (value < values[j + 0*featuresNum])
+                        values[j + 0*featuresNum] = value;
+                    values[j + 1*featuresNum] += value;
+                    if (value > values[j + 2*featuresNum])
+                        values[j + 2*featuresNum] = value;
+                }
+            }
+            Cell cell = new Cell(classification,new GVector(values));
+            cells.add(cell);
+        }
+    }
+
     public void loadWdbcFromScanner(BufferedReader bufferedReader) {
         bufferedReader.lines()
                 .forEach(s -> cells.add(parseWdbc(s)));
