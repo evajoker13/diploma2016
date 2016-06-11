@@ -3,8 +3,13 @@ package com.eva.DGCCancer;
 import com.eva.GSACancer.Cell;
 import com.eva.GSACancer.InputData;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.Scanner;
 
 /**
  * Created by eva on 09.05.16.
@@ -35,7 +40,27 @@ public class Main {
 
         Learner learner = new Learner(inputData);
         System.out.println("Learning...");
-        learner.learn();
+        System.out.println("Result:" + learner.learn());
+
+        Learner.ClassificationQuality avgResult =
+            Collections.nCopies(10, null)
+                    .stream()
+                    .map(x -> learner.findWeights())
+                    .reduce(null, Main::aggregateClassificationQuality);
+        System.out.println(avgResult);
+    }
+
+    private static Learner.ClassificationQuality aggregateClassificationQuality(Learner.ClassificationQuality a, Learner.ClassificationQuality b) {
+        if (a == null) return b;
+        if (b == null) return a;
+        Learner.ClassificationQuality c = new Learner.ClassificationQuality();
+        c.total = a.total + b.total;
+        c.totalFAM = a.totalFAM + b.totalFAM;
+        c.totalRMZ = a.totalRMZ + b.totalRMZ;
+        c.missRatio = (a.missRatio*a.total + b.missRatio*b.total) / c.total;
+        c.missRatioFAM = (a.missRatioFAM*a.totalFAM + b.missRatioFAM*b.totalFAM) / c.totalFAM;
+        c.missRatioRMZ = (a.missRatioRMZ*a.totalRMZ + b.missRatioRMZ*b.totalRMZ) / c.totalRMZ;
+        return c;
     }
 
     private static void loadWdbcFile(InputData inputData, String fileName) {

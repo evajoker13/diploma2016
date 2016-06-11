@@ -32,13 +32,32 @@ public class Learner {
 //    public Random random = new Random();
 //    public final int LCM = 24024;
 
+    public static final class ClassificationQuality {
+        public int total;
+        public int totalFAM;
+        public int totalRMZ;
+        public double missRatio;
+        public double missRatioFAM;
+        public double missRatioRMZ;
+
+        @Override
+        public String toString() {
+            return "{" +
+                    "missRatio=" + missRatio +
+                    ", missRatioFAM=" + missRatioFAM +
+                    ", missRatioRMZ=" + missRatioRMZ +
+                    ", total=" + total +
+                    ", totalFAM=" + totalFAM +
+                    ", totalRMZ=" + totalRMZ +
+                    '}';
+        }
+    }
+
     public double getCurrentMistakesFrequency() {
         return currentMistakesFrequency;
     }
 
     private double currentMistakesFrequency = 1.0;
-    public double currentMistakesQuantityFAM;
-    public double currentMistakesQuantityRMZ;
 
     public Learner(InputData inputData) {
         int featuresNum = inputData.featuresNum();
@@ -73,26 +92,27 @@ public class Learner {
 //        }
     }
 
-    public void learn() {
+    public ClassificationQuality learn() {
         assert inputFAM.size() > 0;
         assert inputRMZ.size() > 0;
         prepareDP();
         shrinkDP(dataParticlesFAM);
         shrinkDP(dataParticlesRMZ);
-        findWeights();
+        return findWeights();
     }
 
-    public void findWeights() {
+    public ClassificationQuality findWeights() {
         ratio = Rational.valueOf(dataParticlesFAM.size(), dataParticlesRMZ.size());
         selectSubsets();
-        algorithmTRFS();
+        return algorithmTRFS();
     }
 
-    private void algorithmTRFS() {
-        algorithmTRFS(0.05);
+    private ClassificationQuality algorithmTRFS() {
+        return algorithmTRFS(0.05);
     }
 
-    private void algorithmTRFS(double maxMistakesFrequency) {
+    private ClassificationQuality algorithmTRFS(double maxMistakesFrequency) {
+        ClassificationQuality quality;
         BitSet triedWeights = new BitSet(weights.getSize()); // markers for weights that were tried since last improvement
         // initially assume that we have 100% misses
         currentMistakesFrequency = 1.0;
@@ -104,15 +124,13 @@ public class Learner {
         do{
 //            System.out.println(selectionProbabilities);
             int index = randomFeature();
-            currentMistakesQuantityFAM = 0;
-            currentMistakesQuantityRMZ = 0;
 //            System.out.println("index="+index);
             weights.setElement(index, weights.getElement(index) + epsilon);
 
-            int testResult = mistakesQuantity(subsetA, subsetB);
-            double mistakesFrequency = (double)testResult / subsetB.size();
-            double famMistakesFrequency = currentMistakesQuantityFAM / testFamQuantity;
-            double rmzMistakesFrequency = currentMistakesQuantityRMZ / testRmzQuantity;
+            quality = mistakesQuantity(subsetA, subsetB);
+            double mistakesFrequency = quality.missRatio;
+            double famMistakesFrequency = quality.missRatioFAM;
+            double rmzMistakesFrequency = quality.missRatioRMZ;
 
             boolean isBetter = mistakesFrequency < currentMistakesFrequency;
             adjustProbability(index, isBetter);
@@ -136,6 +154,7 @@ public class Learner {
                 }
             }
         } while (currentMistakesFrequency > maxMistakesFrequency);
+        return quality;
     }
 
     private void adjustProbability(int index, boolean isBetter) {
@@ -159,8 +178,8 @@ public class Learner {
         }
     }
 
-    private int mistakesQuantity(List<DataParticle> subsetTeacher, List<DataParticle> subsetTester) { // TODO: look closer!!!!
-        int index = 0;
+    private ClassificationQuality mistakesQuantity(List<DataParticle> subsetTeacher, List<DataParticle> subsetTester) {
+        ClassificationQuality quality = new ClassificationQuality();
         List<DataParticle> teacherFAM = new ArrayList<>();
         List<DataParticle> teacherRMZ = new ArrayList<>();
         for (DataParticle dataParticle : subsetTeacher) {
@@ -177,20 +196,34 @@ public class Learner {
         for (DataParticle testDP : subsetTester) {
             double sumFam = sumForces(testDP, teacherFAM);
             double sumRmz = sumForces(testDP, teacherRMZ);
-            if (sumFam >= sumRmz && testDP.centroid.classification != Cell.Classification.FAM) {
-                index++;
-                currentMistakesQuantityFAM++;
+            quality.total++;
+            switch (testDP.centroid.classification)
+            {
+                case FAM:
+                    if (sumRmz >= sumFam) {
+                        quality.missRatio++;
+                        quality.missRatioRMZ++;
+                        quality.totalRMZ++;
+                    } else {
+                        quality.totalFAM++;
+                    }
+                    break;
+                case RMZ:
+                    if (sumFam >= sumRmz) {
+                        quality.missRatio++;
+                        quality.missRatioFAM++;
+                        quality.totalFAM++;
+                    } else {
+                        quality.totalRMZ++;
+                    }
+                    break;
             }
-            if (sumRmz >= sumFam && testDP.centroid.classification != Cell.Classification.RMZ) {
-                index++;
-                currentMistakesQuantityRMZ++;
-            }
-//            if (testDP.centroid.classification != (sumFam > sumRmz ? Cell.Classification.FAM : Cell.Classification.RMZ))
-//                index++;
         }
-
-            return index;
-        }
+        quality.missRatioFAM /= quality.totalFAM;
+        quality.missRatioRMZ /= quality.totalRMZ;
+        quality.missRatio /= quality.total;
+        return quality;
+    }
 
     double sumForces(DataParticle testDP, List<DataParticle> particles) {
         return particles.stream()
@@ -216,6 +249,8 @@ public class Learner {
     }
 
     private void selectSubsets() {
+        subsetA.clear();
+        subsetB.clear();
         int rmzMiddle = dataParticlesRMZ.size() / 2;
         dataParticlesRMZ.stream()
                 .skip(rmzMiddle)
